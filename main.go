@@ -104,8 +104,6 @@ func (cp *ChromosomeProcessor) ProcessFile() error {
 	scanner.Buffer(buf, 10*1024*1024)
 
 	lineNum := 0
-	processedCounts := make(map[string]int)
-	startTime := time.Now()
 
 	for scanner.Scan() {
 		lineNum++
@@ -128,26 +126,12 @@ func (cp *ChromosomeProcessor) ProcessFile() error {
 		if err := writer.WriteByte('\n'); err != nil {
 			return fmt.Errorf("failed to write newline at line %d: %v", lineNum, err)
 		}
-
-		processedCounts[outputChr]++
-
-		if lineNum%500000 == 0 {
-			elapsed := time.Since(startTime)
-			rate := float64(lineNum) / elapsed.Seconds()
-			fmt.Printf("Processed %d lines (%.0f lines/sec)\n", lineNum, rate)
-		}
 	}
 
 	if err := scanner.Err(); err != nil {
 		return fmt.Errorf("error reading input file at line %d: %v", lineNum, err)
 	}
-
 	cp.FlushAllWriters()
-
-	// 输出统计信息
-	elapsed := time.Since(startTime)
-	fmt.Printf("\n%d lines finished in %.2f sec (%.2f lines/sec)\n",
-		lineNum, float64(elapsed.Seconds()), float64(lineNum)/elapsed.Seconds())
 
 	return nil
 }
@@ -203,6 +187,8 @@ func parseChromosomeNames(chrNamesStr string) []string {
 
 func main() {
 
+	startTime := time.Now()
+
 	// parse command line options
 	var (
 		inputFile    = pflag.StringP("input", "i", "", "Input JSONL file path (required)")
@@ -256,5 +242,8 @@ func main() {
 	processor := NewChromosomeProcessor(*inputFile, *prefix, *chrFieldName, chrNames)
 	if err := processor.ProcessFile(); err != nil {
 		log.Fatalf("Error processing file: %v", err)
+	} else {
+		fmt.Printf("Finished in %.2f s\n", time.Since(startTime).Seconds())
 	}
+
 }
