@@ -45,7 +45,7 @@ func NewChromosomeProcessor(inputFile, prefix, chrFieldName string, chrNames []s
 
 // InitializeOutputFiles creates output files for each chromosome
 func (cp *ChromosomeProcessor) InitializeOutputFiles() error {
-	// 为每个染色体创建输出文件
+
 	allChrs := append(cp.chrNames, UnknownChr)
 
 	for _, chr := range allChrs {
@@ -53,11 +53,11 @@ func (cp *ChromosomeProcessor) InitializeOutputFiles() error {
 
 		file, err := os.Create(filename)
 		if err != nil {
-			cp.CloseAllFiles() // 清理已创建的文件
+			cp.CloseAllFiles()
 			return fmt.Errorf("failed to create output file %s: %v", filename, err)
 		}
 
-		writer := bufio.NewWriterSize(file, 64*1024) // 64KB缓冲区
+		writer := bufio.NewWriterSize(file, 4*1024*1024)
 
 		cp.outputFiles[chr] = file
 		cp.outputWriters[chr] = writer
@@ -121,7 +121,6 @@ func (cp *ChromosomeProcessor) ProcessFile() error {
 			outputChr = chr
 		}
 
-		// 写入对应文件
 		writer := cp.GetOutputWriter(outputChr)
 		if _, err := writer.Write(line); err != nil {
 			return fmt.Errorf("failed to write to output file at line %d: %v", lineNum, err)
@@ -132,7 +131,6 @@ func (cp *ChromosomeProcessor) ProcessFile() error {
 
 		processedCounts[outputChr]++
 
-		// 定期输出进度
 		if lineNum%500000 == 0 {
 			elapsed := time.Since(startTime)
 			rate := float64(lineNum) / elapsed.Seconds()
@@ -144,7 +142,6 @@ func (cp *ChromosomeProcessor) ProcessFile() error {
 		return fmt.Errorf("error reading input file at line %d: %v", lineNum, err)
 	}
 
-	// 刷新所有缓冲区
 	cp.FlushAllWriters()
 
 	// 输出统计信息
